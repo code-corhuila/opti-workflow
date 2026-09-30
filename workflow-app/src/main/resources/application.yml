@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: workflow
+  lifecycle:
+    timeout-per-shutdown-phase: 20s          # graceful shutdown: in-flight requests get 20 s
+  web:
+    resources:
+      add-mappings: false                    # unknown routes end in the common 404 envelope
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true       # a typo in a field is an error, not silently ignored
+      accept-float-as-int: false
+    serialization:
+      write-dates-as-timestamps: false       # RFC 3339
+  data:
+    redis:                                   # the saga state store (a team-registered choice, numeral 5.8.4)
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2s                            # max time per command
+      connect-timeout: 3s
+      lettuce:
+        pool:
+          max-active: 10                     # connection pool size
+          max-wait: 5s                       # max wait for a connection: 5 s
+
+server:
+  port: 8080
+  shutdown: graceful
+  max-http-request-header-size: 16KB
+  tomcat:
+    connection-timeout: 5s                   # header/read timeout
+    keep-alive-timeout: 60s                  # idle connections are closed after 60 s
+    max-keep-alive-requests: 100
+    threads:
+      max: 100
+    max-swallow-size: 1MB
+
+jwt:
+  public-key: ${JWT_PUBLIC_KEY:}
+  public-key-file: ${JWT_PUBLIC_KEY_FILE:}
+
+workflow:
+  service-token: ${SERVICE_TOKEN:}           # the workflow's own credential, never the person's token
+  customers-url: ${CUSTOMERS_API_URL:}
+  products-url: ${PRODUCTS_API_URL:}
+  sales-url: ${SALES_API_URL:}
+  http-timeout: ${HTTP_TIMEOUT:PT5S}         # limit per call to a participant
+  http-attempts: ${HTTP_ATTEMPTS:3}          # retries inside one call: network, 429, 5xx
+  saga-max-attempts: ${SAGA_MAX_ATTEMPTS:3}  # failed runs of a saga before it ends FAILED for an operator
+  saga-lease: ${SAGA_LEASE:PT30S}            # how long one executor holds a saga
+  saga-resume-after: ${SAGA_RESUME_AFTER:PT30S}
+  saga-resume-every: ${SAGA_RESUME_EVERY:PT30S}
+
+management:
+  endpoints:
+    enabled-by-default: false

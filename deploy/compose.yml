@@ -1,0 +1,34 @@
+# The saga orchestrator. Its state lives in the transversal redis defined by opti-infra
+# (numeral 5.8.4: the team registers this choice as an ADR in opti-docs).
+name: opti-workflow
+
+services:
+  workflow:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: opti/workflow:local
+    environment:
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?set JWT_PUBLIC_KEY (public key of the identity service)}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?set SERVICE_TOKEN (this workflow's own service credential)}
+      CUSTOMERS_API_URL: http://customers-api:8080
+      PRODUCTS_API_URL: http://products-api:8080
+      SALES_API_URL: http://sales-api:8080
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SAGA_MAX_ATTEMPTS: ${SAGA_MAX_ATTEMPTS:-3}
+      SAGA_LEASE: ${SAGA_LEASE:-PT30S}
+      SAGA_RESUME_AFTER: ${SAGA_RESUME_AFTER:-PT30S}
+      SAGA_RESUME_EVERY: ${SAGA_RESUME_EVERY:-PT30S}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - platform
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+networks:
+  platform:
+    external: true

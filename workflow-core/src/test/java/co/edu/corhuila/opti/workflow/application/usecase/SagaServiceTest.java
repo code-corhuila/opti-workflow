@@ -51,8 +51,10 @@ class SagaServiceTest {
                 Duration.ofSeconds(30), Duration.ofSeconds(30));
     }
 
+    private static final UUID SELLER = UUID.fromString("22222222-2222-4222-8222-222222222222");
+
     private static PlaceOrderInput input() {
-        return new PlaceOrderInput(PATIENT, FRAME, 1);
+        return new PlaceOrderInput(PATIENT, FRAME, 1, SELLER);
     }
 
     // ---- place-order, happy path ----------------------------------------------------------
@@ -273,11 +275,11 @@ class SagaServiceTest {
 
     @Test
     void invalidInputNamesEveryField() {
-        assertThatThrownBy(() -> service.placeOrder(new PlaceOrderInput(null, null, 11), "short"))
+        assertThatThrownBy(() -> service.placeOrder(new PlaceOrderInput(null, null, 11, null), "short"))
                 .isInstanceOfSatisfying(DomainException.class, e -> {
                     assertThat(e.kind()).isEqualTo(ErrorKind.VALIDATION);
-                    assertThat(e.fields()).extracting(FieldError::field)
-                            .containsExactlyInAnyOrder("Idempotency-Key", "patientId", "frameId", "quantity");
+                    assertThat(e.fields()).extracting(FieldError::field).containsExactlyInAnyOrder(
+                            "Idempotency-Key", "patientId", "frameId", "quantity", "sellerId");
                 });
         assertThatThrownBy(() -> service.cancelOrder(null, "short")).isInstanceOfSatisfying(DomainException.class,
                 e -> assertThat(e.fields()).extracting(FieldError::field)

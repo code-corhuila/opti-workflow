@@ -16,7 +16,7 @@ public interface OrdersPort {
 
     /** What the workflow tells sales to create; the price comes from the reservation, never from the client. */
     record Draft(UUID patientId, String reference, UUID frameId, UUID reservationId, String sku, String description,
-                 int quantity, long unitPriceCents) {
+                 int quantity, long unitPriceCents, UUID sellerId) {
     }
 
     /** What the workflow needs to know of an existing order. */

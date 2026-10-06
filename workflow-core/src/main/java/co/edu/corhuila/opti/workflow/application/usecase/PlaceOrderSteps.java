@@ -7,6 +7,7 @@ import java.util.UUID;
 import co.edu.corhuila.opti.workflow.application.port.out.OrdersPort;
 import co.edu.corhuila.opti.workflow.application.port.out.PatientsPort;
 import co.edu.corhuila.opti.workflow.application.port.out.StockPort;
+import co.edu.corhuila.opti.workflow.domain.model.ProductType;
 import co.edu.corhuila.opti.workflow.domain.saga.SagaInstance;
 
 /**
@@ -20,7 +21,8 @@ final class PlaceOrderSteps {
     static final String OPEN_ORDER = "open-order";
 
     static final String PATIENT_ID = "patientId";
-    static final String FRAME_ID = "frameId";
+    static final String PRODUCT_TYPE = "productType";
+    static final String PRODUCT_ID = "productId";
     static final String QUANTITY = "quantity";
     static final String SELLER_ID = "sellerId";
     static final String PATIENT_NAME = "patientName";
@@ -56,8 +58,9 @@ final class PlaceOrderSteps {
 
         @Override
         public Map<String, String> execute(SagaInstance saga) {
-            var reservation = stock.reserve(UUID.fromString(saga.datum(FRAME_ID)),
-                    Integer.parseInt(saga.datum(QUANTITY)), saga.id().toString(), saga.id() + ":" + RESERVE_STOCK);
+            var reservation = stock.reserve(ProductType.valueOf(saga.datum(PRODUCT_TYPE)),
+                    UUID.fromString(saga.datum(PRODUCT_ID)), Integer.parseInt(saga.datum(QUANTITY)),
+                    saga.id().toString(), saga.id() + ":" + RESERVE_STOCK);
             return Map.of(RESERVATION_ID, reservation.id().toString(), "sku", reservation.sku(),
                     "description", reservation.description(),
                     "unitPriceCents", String.valueOf(reservation.unitPriceCents()));
@@ -67,7 +70,7 @@ final class PlaceOrderSteps {
         public void compensate(SagaInstance saga) {
             String reservation = saga.datum(RESERVATION_ID);
             if (reservation != null) {
-                stock.release(UUID.fromString(reservation));
+                stock.release(ProductType.valueOf(saga.datum(PRODUCT_TYPE)), UUID.fromString(reservation));
             }
         }
     }
@@ -82,9 +85,10 @@ final class PlaceOrderSteps {
         @Override
         public Map<String, String> execute(SagaInstance saga) {
             var draft = new OrdersPort.Draft(UUID.fromString(saga.datum(PATIENT_ID)), saga.id().toString(),
-                    UUID.fromString(saga.datum(FRAME_ID)), UUID.fromString(saga.datum(RESERVATION_ID)),
-                    saga.datum("sku"), saga.datum("description"), Integer.parseInt(saga.datum(QUANTITY)),
-                    Long.parseLong(saga.datum("unitPriceCents")), UUID.fromString(saga.datum(SELLER_ID)));
+                    ProductType.valueOf(saga.datum(PRODUCT_TYPE)), UUID.fromString(saga.datum(PRODUCT_ID)),
+                    UUID.fromString(saga.datum(RESERVATION_ID)), saga.datum("sku"), saga.datum("description"),
+                    Integer.parseInt(saga.datum(QUANTITY)), Long.parseLong(saga.datum("unitPriceCents")),
+                    UUID.fromString(saga.datum(SELLER_ID)));
             return Map.of(ORDER_ID, orders.open(draft, saga.id() + ":" + OPEN_ORDER).toString());
         }
 

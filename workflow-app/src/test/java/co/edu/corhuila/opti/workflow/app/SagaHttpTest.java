@@ -103,9 +103,9 @@ class SagaHttpTest {
         as(post(PLACE).contentType(MediaType.APPLICATION_JSON).content("{\"quantity\":11}"), "SELLER")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.details[*].field", hasItems("Idempotency-Key", "patientId", "frameId", "quantity")));
+                .andExpect(jsonPath("$.details[*].field", hasItems("Idempotency-Key", "patientId", "productType", "productId", "quantity")));
         as(post(PLACE).header("Idempotency-Key", key()).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"patientId\":\"x\",\"frameId\":\"y\",\"quantity\":1}"), "SELLER")
+                .content("{\"patientId\":\"x\",\"productId\":\"y\",\"quantity\":1}"), "SELLER")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.details[*].field", hasItem("patientId")));
         as(post(PLACE).header("Idempotency-Key", key()).contentType(MediaType.APPLICATION_JSON)
@@ -204,8 +204,8 @@ class SagaHttpTest {
     }
 
     private static String body() {
-        return "{\"patientId\":\"" + HttpTestApplication.PATIENT + "\",\"frameId\":\"" + HttpTestApplication.FRAME
-                + "\",\"quantity\":1}";
+        return "{\"patientId\":\"" + HttpTestApplication.PATIENT + "\",\"productType\":\"FRAME\",\"productId\":\""
+                + HttpTestApplication.FRAME + "\",\"quantity\":1}";
     }
 
     private static String key() {

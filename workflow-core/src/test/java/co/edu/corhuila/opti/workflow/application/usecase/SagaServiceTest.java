@@ -14,6 +14,7 @@ import co.edu.corhuila.opti.workflow.application.port.in.SagaUseCases.PlaceOrder
 import co.edu.corhuila.opti.workflow.domain.model.DomainException;
 import co.edu.corhuila.opti.workflow.domain.model.ErrorKind;
 import co.edu.corhuila.opti.workflow.domain.model.FieldError;
+import co.edu.corhuila.opti.workflow.domain.model.ProductType;
 import co.edu.corhuila.opti.workflow.domain.saga.FailureReason;
 import co.edu.corhuila.opti.workflow.domain.saga.SagaInstance;
 import co.edu.corhuila.opti.workflow.domain.saga.SagaStatus;
@@ -54,7 +55,7 @@ class SagaServiceTest {
     private static final UUID SELLER = UUID.fromString("22222222-2222-4222-8222-222222222222");
 
     private static PlaceOrderInput input() {
-        return new PlaceOrderInput(PATIENT, FRAME, 1, SELLER);
+        return new PlaceOrderInput(PATIENT, ProductType.FRAME, FRAME, 1, SELLER);
     }
 
     // ---- place-order, happy path ----------------------------------------------------------
@@ -275,11 +276,11 @@ class SagaServiceTest {
 
     @Test
     void invalidInputNamesEveryField() {
-        assertThatThrownBy(() -> service.placeOrder(new PlaceOrderInput(null, null, 11, null), "short"))
+        assertThatThrownBy(() -> service.placeOrder(new PlaceOrderInput(null, null, null, 11, null), "short"))
                 .isInstanceOfSatisfying(DomainException.class, e -> {
                     assertThat(e.kind()).isEqualTo(ErrorKind.VALIDATION);
                     assertThat(e.fields()).extracting(FieldError::field).containsExactlyInAnyOrder(
-                            "Idempotency-Key", "patientId", "frameId", "quantity", "sellerId");
+                            "Idempotency-Key", "patientId", "productType", "productId", "quantity", "sellerId");
                 });
         assertThatThrownBy(() -> service.cancelOrder(null, "short")).isInstanceOfSatisfying(DomainException.class,
                 e -> assertThat(e.fields()).extracting(FieldError::field)

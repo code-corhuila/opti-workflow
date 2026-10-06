@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.corhuila.opti.workflow.application.port.in.SagaUseCases;
 import co.edu.corhuila.opti.workflow.application.port.in.SagaUseCases.PlaceOrderInput;
 import co.edu.corhuila.opti.workflow.application.port.out.Created;
+import co.edu.corhuila.opti.workflow.domain.model.ProductType;
 import co.edu.corhuila.opti.workflow.domain.saga.FailureReason;
 import co.edu.corhuila.opti.workflow.domain.saga.SagaInstance;
 import co.edu.corhuila.opti.workflow.domain.saga.SagaStatus;
@@ -41,7 +42,7 @@ class SagaController {
         this.useCases = useCases;
     }
 
-    record PlaceOrderRequest(UUID patientId, UUID frameId, Integer quantity) {
+    record PlaceOrderRequest(UUID patientId, ProductType productType, UUID productId, Integer quantity) {
     }
 
     record CancelOrderRequest(UUID orderId) {
@@ -64,7 +65,7 @@ class SagaController {
         var caller = RequestRules.requireRole(http, Roles.ADMIN, Roles.SELLER);
         UUID sellerId = RequestRules.uuid(caller.subject(), "sellerId");
         return respond(useCases.placeOrder(
-                new PlaceOrderInput(body.patientId(), body.frameId(), body.quantity(), sellerId), key));
+                new PlaceOrderInput(body.patientId(), body.productType(), body.productId(), body.quantity(), sellerId), key));
     }
 
     @PostMapping("/cancel-order")

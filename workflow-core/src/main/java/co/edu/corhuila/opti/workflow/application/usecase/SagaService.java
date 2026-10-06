@@ -52,14 +52,15 @@ public class SagaService implements SagaUseCases {
         Violations v = new Violations();
         String key = v.check(() -> Validation.idempotencyKey(idempotencyKey));
         UUID patient = v.check(() -> Validation.required(input.patientId(), "patientId"));
-        UUID frame = v.check(() -> Validation.required(input.frameId(), "frameId"));
+        var productType = v.check(() -> Validation.required(input.productType(), "productType"));
+        UUID product = v.check(() -> Validation.required(input.productId(), "productId"));
         Integer quantity = v.check(() -> Validation.intBetween(
                 Validation.required(input.quantity(), "quantity"), "quantity", 1, MAX_QUANTITY));
         UUID seller = v.check(() -> Validation.required(input.sellerId(), "sellerId"));
         v.throwIfAny();
         return start(key, SagaType.PLACE_ORDER, Map.of(PlaceOrderSteps.PATIENT_ID, patient.toString(),
-                PlaceOrderSteps.FRAME_ID, frame.toString(), PlaceOrderSteps.QUANTITY, quantity.toString(),
-                PlaceOrderSteps.SELLER_ID, seller.toString()));
+                PlaceOrderSteps.PRODUCT_TYPE, productType.name(), PlaceOrderSteps.PRODUCT_ID, product.toString(),
+                PlaceOrderSteps.QUANTITY, quantity.toString(), PlaceOrderSteps.SELLER_ID, seller.toString()));
     }
 
     @Override

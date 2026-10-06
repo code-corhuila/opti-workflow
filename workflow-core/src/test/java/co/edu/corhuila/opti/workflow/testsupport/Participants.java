@@ -18,6 +18,7 @@ import co.edu.corhuila.opti.workflow.application.port.out.ParticipantFailure;
 import co.edu.corhuila.opti.workflow.application.port.out.PatientsPort;
 import co.edu.corhuila.opti.workflow.application.port.out.SagaStore;
 import co.edu.corhuila.opti.workflow.application.port.out.StockPort;
+import co.edu.corhuila.opti.workflow.domain.model.ProductType;
 import co.edu.corhuila.opti.workflow.domain.saga.FailureReason;
 import co.edu.corhuila.opti.workflow.domain.saga.SagaInstance;
 
@@ -63,7 +64,8 @@ public final class Participants {
         private final Map<String, UUID> byKey = new HashMap<>();
 
         @Override
-        public Reservation reserve(UUID frameId, int quantity, String reference, String idempotencyKey) {
+        public Reservation reserve(ProductType productType, UUID productId, int quantity, String reference,
+                                    String idempotencyKey) {
             keys.add(idempotencyKey);
             if (failReservesWithTechnicalFailure > 0) {
                 failReservesWithTechnicalFailure--;
@@ -73,23 +75,23 @@ public final class Participants {
             if (existing != null) {
                 return reservations.get(existing);
             }
-            int available = stock.getOrDefault(frameId, -1);
+            int available = stock.getOrDefault(productId, -1);
             if (available < 0) {
-                throw ParticipantFailure.business(FailureReason.FRAME_NOT_FOUND, "no such frame");
+                throw ParticipantFailure.business(FailureReason.FRAME_NOT_FOUND, "no such " + productType);
             }
             if (available < quantity) {
                 throw ParticipantFailure.business(FailureReason.INSUFFICIENT_STOCK, "only " + available);
             }
-            stock.put(frameId, available - quantity);
-            Reservation reservation = new Reservation(UUID.randomUUID(), frameId, "RB5228-2000", "Frame Ray-Ban",
-                    quantity, 52_000_000L);
+            stock.put(productId, available - quantity);
+            Reservation reservation = new Reservation(UUID.randomUUID(), productType, productId, "RB5228-2000",
+                    "Frame Ray-Ban", quantity, 52_000_000L);
             reservations.put(reservation.id(), reservation);
             byKey.put(idempotencyKey, reservation.id());
             return reservation;
         }
 
         @Override
-        public void release(UUID reservationId) {
+        public void release(ProductType productType, UUID reservationId) {
             if (failRelease) {
                 throw ParticipantFailure.technical("products is down");
             }
@@ -98,7 +100,7 @@ public final class Participants {
                 throw ParticipantFailure.business(FailureReason.REJECTED, "no such reservation");
             }
             if (released.add(reservationId)) {
-                stock.merge(reservation.frameId(), reservation.quantity(), Integer::sum);
+                stock.merge(reservation.productId(), reservation.quantity(), Integer::sum);
             }
         }
     }
@@ -130,7 +132,8 @@ public final class Participants {
             }
             lastDraft = draft;
             UUID id = UUID.randomUUID();
-            orders.put(id, new Snapshot(id, "QUOTATION", List.of(draft.reservationId())));
+            orders.put(id, new Snapshot(id, "QUOTATION",
+                    List.of(new ReservationRef(draft.reservationId(), draft.productType()))));
             byKey.put(idempotencyKey, id);
             return id;
         }

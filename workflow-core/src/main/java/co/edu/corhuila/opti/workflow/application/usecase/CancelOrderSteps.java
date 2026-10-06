@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import co.edu.corhuila.opti.workflow.application.port.out.OrdersPort;
 import co.edu.corhuila.opti.workflow.application.port.out.StockPort;
+import co.edu.corhuila.opti.workflow.domain.model.ProductType;
 import co.edu.corhuila.opti.workflow.domain.saga.SagaInstance;
 
 /**
@@ -22,7 +23,8 @@ final class CancelOrderSteps {
     static final String RELEASE_STOCK = "release-stock";
 
     static final String ORDER_ID = "orderId";
-    static final String RESERVATION_IDS = "reservationIds";
+    /** Each entry {@code reservationId:productType}, comma-separated (HU-25: not every line is a frame). */
+    static final String RESERVATIONS = "reservations";
 
     private CancelOrderSteps() {
     }
@@ -43,8 +45,10 @@ final class CancelOrderSteps {
             UUID orderId = UUID.fromString(saga.datum(ORDER_ID));
             OrdersPort.Snapshot order = orders.get(orderId);
             orders.cancel(orderId);
-            return Map.of(RESERVATION_IDS, order.reservationIds().stream().map(UUID::toString)
-                    .collect(Collectors.joining(",")));
+            String encoded = order.reservations().stream()
+                    .map(r -> r.reservationId() + ":" + r.productType())
+                    .collect(Collectors.joining(","));
+            return Map.of(RESERVATIONS, encoded);
         }
 
         @Override
@@ -62,9 +66,12 @@ final class CancelOrderSteps {
 
         @Override
         public Map<String, String> execute(SagaInstance saga) {
-            String ids = saga.datum(RESERVATION_IDS);
-            if (ids != null && !ids.isBlank()) {
-                Arrays.stream(ids.split(",")).map(UUID::fromString).forEach(stock::release);
+            String encoded = saga.datum(RESERVATIONS);
+            if (encoded != null && !encoded.isBlank()) {
+                Arrays.stream(encoded.split(",")).forEach(entry -> {
+                    String[] parts = entry.split(":", 2);
+                    stock.release(ProductType.valueOf(parts[1]), UUID.fromString(parts[0]));
+                });
             }
             return Map.of();
         }

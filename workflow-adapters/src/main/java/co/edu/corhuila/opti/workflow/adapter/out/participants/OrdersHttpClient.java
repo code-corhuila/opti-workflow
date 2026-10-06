@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import co.edu.corhuila.opti.workflow.application.port.out.OrdersPort;
 import co.edu.corhuila.opti.workflow.application.port.out.ParticipantFailure;
+import co.edu.corhuila.opti.workflow.domain.model.ProductType;
 import co.edu.corhuila.opti.workflow.domain.saga.FailureReason;
 
 /** The sales domain through its published API. */
@@ -24,9 +25,9 @@ public class OrdersHttpClient implements OrdersPort {
 
     @Override
     public UUID open(Draft draft, String idempotencyKey) {
-        Map<String, Object> line = Map.of("frameId", draft.frameId(), "reservationId", draft.reservationId(),
-                "sku", draft.sku(), "description", draft.description(), "quantity", draft.quantity(),
-                "unitPriceCents", draft.unitPriceCents());
+        Map<String, Object> line = Map.of("productType", draft.productType().name(), "productId", draft.productId(),
+                "reservationId", draft.reservationId(), "sku", draft.sku(), "description", draft.description(),
+                "quantity", draft.quantity(), "unitPriceCents", draft.unitPriceCents());
         JsonNode body = client.call("POST", baseUrl + "/api/v1/work-orders",
                 Map.of("patientId", draft.patientId(), "reference", draft.reference(), "items", List.of(line),
                         "sellerId", draft.sellerId()),
@@ -39,8 +40,10 @@ public class OrdersHttpClient implements OrdersPort {
     public Snapshot get(UUID orderId) {
         JsonNode order = client.call("GET", baseUrl + "/api/v1/work-orders/" + orderId, null, null,
                 this::orderRefusal);
-        List<UUID> reservations = new ArrayList<>();
-        order.path("items").forEach(item -> reservations.add(UUID.fromString(item.path("reservationId").asText())));
+        List<ReservationRef> reservations = new ArrayList<>();
+        order.path("items").forEach(item -> reservations.add(new ReservationRef(
+                UUID.fromString(item.path("reservationId").asText()),
+                ProductType.valueOf(item.path("productType").asText()))));
         return new Snapshot(orderId, order.path("status").asText(), reservations);
     }
 

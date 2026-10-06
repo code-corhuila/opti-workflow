@@ -27,6 +27,7 @@ import com.sun.net.httpserver.HttpServer;
 import co.edu.corhuila.opti.workflow.adapter.Correlation;
 import co.edu.corhuila.opti.workflow.application.port.out.OrdersPort;
 import co.edu.corhuila.opti.workflow.application.port.out.ParticipantFailure;
+import co.edu.corhuila.opti.workflow.domain.model.ProductType;
 import co.edu.corhuila.opti.workflow.domain.saga.FailureReason;
 
 /** The participant clients against a fake API that speaks the common contract. */
@@ -92,7 +93,7 @@ class ParticipantsHttpTest {
         reply(201, "{\"id\":\"" + UUID.randomUUID() + "\",\"sku\":\"RB5228-2000\",\"description\":\"Frame\","
                 + "\"quantity\":1,\"unitPriceCents\":52000000}");
 
-        stock.reserve(frame, 1, "saga-1", "saga-1:reserve-stock");
+        stock.reserve(ProductType.FRAME, frame, 1, "saga-1", "saga-1:reserve-stock");
 
         String[] call = received.get(0);
         assertThat(call[0]).isEqualTo("POST");
@@ -119,7 +120,7 @@ class ParticipantsHttpTest {
     void aBusinessRefusalIsNotRetried() {
         reply(422, envelope("insufficient stock: 0 available, 1 requested"));
 
-        assertThatThrownBy(() -> new StockHttpClient(client, base).reserve(UUID.randomUUID(), 1, "s", "k12345678"))
+        assertThatThrownBy(() -> new StockHttpClient(client, base).reserve(ProductType.FRAME, UUID.randomUUID(), 1, "s", "k12345678"))
                 .isInstanceOfSatisfying(ParticipantFailure.class, e -> {
                     assertThat(e.kind()).isEqualTo(ParticipantFailure.Kind.BUSINESS);
                     assertThat(e.reason()).isEqualTo(FailureReason.INSUFFICIENT_STOCK);
@@ -177,9 +178,10 @@ class ParticipantsHttpTest {
 
         UUID id = UUID.randomUUID();
         UUID reservation = UUID.randomUUID();
-        reply(200, "{\"id\":\"" + id + "\",\"status\":\"QUOTATION\",\"items\":[{\"reservationId\":\"" + reservation + "\"}]}");
+        reply(200, "{\"id\":\"" + id + "\",\"status\":\"QUOTATION\",\"items\":[{\"reservationId\":\"" + reservation
+                + "\",\"productType\":\"FRAME\"}]}");
         OrdersPort.Snapshot snapshot = orders.get(id);
-        assertThat(snapshot.reservationIds()).containsExactly(reservation);
+        assertThat(snapshot.reservations()).containsExactly(new OrdersPort.ReservationRef(reservation, ProductType.FRAME));
         assertThat(snapshot.status()).isEqualTo("QUOTATION");
     }
 
@@ -189,8 +191,8 @@ class ParticipantsHttpTest {
         reply(201, "{\"id\":\"" + orderId + "\"}");
 
         UUID opened = new OrdersHttpClient(client, base).open(new OrdersPort.Draft(UUID.randomUUID(), "saga-1",
-                UUID.randomUUID(), UUID.randomUUID(), "RB5228-2000", "Frame", 1, 52_000_000L, UUID.randomUUID()),
-                "saga-1:open-order");
+                ProductType.FRAME, UUID.randomUUID(), UUID.randomUUID(), "RB5228-2000", "Frame", 1, 52_000_000L,
+                UUID.randomUUID()), "saga-1:open-order");
 
         assertThat(opened).isEqualTo(orderId);
         assertThat(received.get(0)[4]).isEqualTo("saga-1:open-order");

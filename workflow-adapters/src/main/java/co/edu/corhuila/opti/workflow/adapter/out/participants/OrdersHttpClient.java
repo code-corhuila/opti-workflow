@@ -28,7 +28,8 @@ public class OrdersHttpClient implements OrdersPort {
                 "sku", draft.sku(), "description", draft.description(), "quantity", draft.quantity(),
                 "unitPriceCents", draft.unitPriceCents());
         JsonNode body = client.call("POST", baseUrl + "/api/v1/work-orders",
-                Map.of("patientId", draft.patientId(), "reference", draft.reference(), "items", List.of(line)),
+                Map.of("patientId", draft.patientId(), "reference", draft.reference(), "items", List.of(line),
+                        "sellerId", draft.sellerId()),
                 idempotencyKey, refusal -> ParticipantFailure.business(FailureReason.REJECTED,
                         "sales refused the order: " + refusal.message()));
         return UUID.fromString(body.path("id").asText());

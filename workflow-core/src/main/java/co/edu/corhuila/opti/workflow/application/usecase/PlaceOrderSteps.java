@@ -22,6 +22,7 @@ final class PlaceOrderSteps {
     static final String PATIENT_ID = "patientId";
     static final String FRAME_ID = "frameId";
     static final String QUANTITY = "quantity";
+    static final String SELLER_ID = "sellerId";
     static final String PATIENT_NAME = "patientName";
     static final String RESERVATION_ID = "reservationId";
     static final String ORDER_ID = "orderId";
@@ -83,7 +84,7 @@ final class PlaceOrderSteps {
             var draft = new OrdersPort.Draft(UUID.fromString(saga.datum(PATIENT_ID)), saga.id().toString(),
                     UUID.fromString(saga.datum(FRAME_ID)), UUID.fromString(saga.datum(RESERVATION_ID)),
                     saga.datum("sku"), saga.datum("description"), Integer.parseInt(saga.datum(QUANTITY)),
-                    Long.parseLong(saga.datum("unitPriceCents")));
+                    Long.parseLong(saga.datum("unitPriceCents")), UUID.fromString(saga.datum(SELLER_ID)));
             return Map.of(ORDER_ID, orders.open(draft, saga.id() + ":" + OPEN_ORDER).toString());
         }
 

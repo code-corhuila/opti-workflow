@@ -19,7 +19,7 @@ public interface SagaUseCases {
     /** Resumes the sagas that stopped halfway (a participant was down, the workflow restarted). Returns how many. */
     int resumeStuck();
 
-    /** Raw input of place-order, before validation. */
-    record PlaceOrderInput(UUID patientId, UUID frameId, Integer quantity) {
+    /** Raw input of place-order, before validation. {@code sellerId} is the caller who started it. */
+    record PlaceOrderInput(UUID patientId, UUID frameId, Integer quantity, UUID sellerId) {
     }
 }

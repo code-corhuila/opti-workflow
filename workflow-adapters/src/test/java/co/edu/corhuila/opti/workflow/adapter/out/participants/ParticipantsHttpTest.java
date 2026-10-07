@@ -189,7 +189,8 @@ class ParticipantsHttpTest {
         reply(201, "{\"id\":\"" + orderId + "\"}");
 
         UUID opened = new OrdersHttpClient(client, base).open(new OrdersPort.Draft(UUID.randomUUID(), "saga-1",
-                UUID.randomUUID(), UUID.randomUUID(), "RB5228-2000", "Frame", 1, 52_000_000L), "saga-1:open-order");
+                UUID.randomUUID(), UUID.randomUUID(), "RB5228-2000", "Frame", 1, 52_000_000L, UUID.randomUUID()),
+                "saga-1:open-order");
 
         assertThat(opened).isEqualTo(orderId);
         assertThat(received.get(0)[4]).isEqualTo("saga-1:open-order");

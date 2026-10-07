@@ -61,8 +61,10 @@ class SagaController {
     ResponseEntity<SagaResponse> placeOrder(HttpServletRequest http,
             @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @RequestBody PlaceOrderRequest body) {
-        RequestRules.requireRole(http, Roles.ADMIN, Roles.SELLER);
-        return respond(useCases.placeOrder(new PlaceOrderInput(body.patientId(), body.frameId(), body.quantity()), key));
+        var caller = RequestRules.requireRole(http, Roles.ADMIN, Roles.SELLER);
+        UUID sellerId = RequestRules.uuid(caller.subject(), "sellerId");
+        return respond(useCases.placeOrder(
+                new PlaceOrderInput(body.patientId(), body.frameId(), body.quantity(), sellerId), key));
     }
 
     @PostMapping("/cancel-order")

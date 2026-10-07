@@ -36,15 +36,15 @@ final class TestTokens {
     }
 
     static String valid(Instant now, String... roles) {
-        return rs256(IDENTITY.getPrivate(), now, "user-1", roles);
+        return rs256(IDENTITY.getPrivate(), now, "44444444-4444-4444-8444-444444444444", roles);
     }
 
     static String expired(Instant now) {
-        return sign("RS256", claims("user-1", now.minusSeconds(7200), now.minusSeconds(3600)), IDENTITY.getPrivate());
+        return sign("RS256", claims("44444444-4444-4444-8444-444444444444", now.minusSeconds(7200), now.minusSeconds(3600)), IDENTITY.getPrivate());
     }
 
     static String signedByOtherKey(Instant now) {
-        return rs256(STRANGER.getPrivate(), now, "user-1", "ADMIN");
+        return rs256(STRANGER.getPrivate(), now, "44444444-4444-4444-8444-444444444444", "ADMIN");
     }
 
     static String withoutSubject(Instant now) {
@@ -53,7 +53,7 @@ final class TestTokens {
 
     static String algNone(Instant now) {
         return B64.encodeToString("{\"alg\":\"none\",\"typ\":\"JWT\"}".getBytes(StandardCharsets.UTF_8)) + "."
-                + B64.encodeToString(claims("user-1", now, now.plusSeconds(3600), "ADMIN").getBytes(StandardCharsets.UTF_8))
+                + B64.encodeToString(claims("44444444-4444-4444-8444-444444444444", now, now.plusSeconds(3600), "ADMIN").getBytes(StandardCharsets.UTF_8))
                 + ".";
     }
 
@@ -61,7 +61,7 @@ final class TestTokens {
     static String hs256WithPublicKey(Instant now) {
         try {
             String head = B64.encodeToString("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes(StandardCharsets.UTF_8));
-            String body = B64.encodeToString(claims("user-1", now, now.plusSeconds(3600), "ADMIN")
+            String body = B64.encodeToString(claims("44444444-4444-4444-8444-444444444444", now, now.plusSeconds(3600), "ADMIN")
                     .getBytes(StandardCharsets.UTF_8));
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(publicKeyPem().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));

@@ -55,9 +55,11 @@ public class SagaService implements SagaUseCases {
         UUID frame = v.check(() -> Validation.required(input.frameId(), "frameId"));
         Integer quantity = v.check(() -> Validation.intBetween(
                 Validation.required(input.quantity(), "quantity"), "quantity", 1, MAX_QUANTITY));
+        UUID seller = v.check(() -> Validation.required(input.sellerId(), "sellerId"));
         v.throwIfAny();
         return start(key, SagaType.PLACE_ORDER, Map.of(PlaceOrderSteps.PATIENT_ID, patient.toString(),
-                PlaceOrderSteps.FRAME_ID, frame.toString(), PlaceOrderSteps.QUANTITY, quantity.toString()));
+                PlaceOrderSteps.FRAME_ID, frame.toString(), PlaceOrderSteps.QUANTITY, quantity.toString(),
+                PlaceOrderSteps.SELLER_ID, seller.toString()));
     }
 
     @Override
